@@ -133,7 +133,7 @@ resource lb 'Microsoft.Network/loadBalancers@2023-11-01' = {
         }
       }
     ]
-    loadBalancingRules: concat(rulesA, rulesB)
+    //loadBalancingRules: concat(rulesA, rulesB)
   }
 }
 
