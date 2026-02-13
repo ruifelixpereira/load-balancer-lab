@@ -77,6 +77,11 @@ jobs:
           cd src/apiA
           pip install -r requirements.txt --target=".python_packages/lib/site-packages"
 
+      - name: Create deployment package
+        run: |
+          cd src/apiA
+          zip -r ../../apiA.zip . -x '.funcignore'
+
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
@@ -85,10 +90,12 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Functions
-        uses: azure/functions-action@v1
-        with:
-          app-name: ${{ needs.resolve-names.outputs.funcAppAName }}
-          package: src/apiA
+        run: |
+          az functionapp deploy \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ needs.resolve-names.outputs.funcAppAName }}" \
+            --src-path apiA.zip \
+            --type zip
 
   # ------------------------------------------------------------------
   # Deploy API B
@@ -112,6 +119,11 @@ jobs:
           cd src/apiB
           pip install -r requirements.txt --target=".python_packages/lib/site-packages"
 
+      - name: Create deployment package
+        run: |
+          cd src/apiB
+          zip -r ../../apiB.zip . -x '.funcignore'
+
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
@@ -120,7 +132,9 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Functions
-        uses: azure/functions-action@v1
-        with:
-          app-name: ${{ needs.resolve-names.outputs.funcAppBName }}
-          package: src/apiB
+        run: |
+          az functionapp deploy \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ needs.resolve-names.outputs.funcAppBName }}" \
+            --src-path apiB.zip \
+            --type zip
