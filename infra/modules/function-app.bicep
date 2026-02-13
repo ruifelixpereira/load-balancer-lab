@@ -27,6 +27,9 @@ param privateDnsZoneId string
 @description('Application Insights connection string')
 param appInsightsConnectionString string = ''
 
+@description('Principal ID of the deploying service principal (granted Storage Blob Data Contributor for CI/CD uploads)')
+param deployerPrincipalId string = ''
+
 // ---------------------------------------------------------------------------
 // Storage Account
 // ---------------------------------------------------------------------------
@@ -89,8 +92,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
           type: 'blobContainer'
           value: '${storageAccount.properties.primaryEndpoints.blob}deployments'
           authentication: {
-            type: 'StorageAccountConnectionString'
-            storageAccountConnectionStringName: 'DEPLOYMENT_STORAGE_CONNECTION_STRING'
+            type: 'SystemAssignedIdentity'
           }
         }
       }
@@ -108,10 +110,6 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         {
           name: 'AzureWebJobsStorage__accountName'
           value: storageAccountName
-        }
-        {
-          name: 'DEPLOYMENT_STORAGE_CONNECTION_STRING'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
@@ -135,6 +133,22 @@ resource storageBlobDataOwnerRole 'Microsoft.Authorization/roleAssignments@2022-
       'b7e6dc6d-f1e8-4753-8033-0f276bb0955b' // Storage Blob Data Owner
     )
     principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RBAC – Storage Blob Data Contributor for the deployer SP (CI/CD)
+// ---------------------------------------------------------------------------
+resource deployerBlobContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(deployerPrincipalId)) {
+  name: guid(storageAccount.id, deployerPrincipalId, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Contributor
+    )
+    principalId: deployerPrincipalId
     principalType: 'ServicePrincipal'
   }
 }

@@ -89,13 +89,27 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Azure Functions
+      - name: Deploy to blob storage (Flex Consumption)
         run: |
-          az functionapp deploy \
-            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --name "${{ needs.resolve-names.outputs.funcAppAName }}" \
-            --src-path apiA.zip \
-            --type zip
+          FUNC_NAME="${{ needs.resolve-names.outputs.funcAppAName }}"
+          RG="${{ env.AZURE_RESOURCE_GROUP }}"
+
+          # Resolve the deployment storage account from app settings
+          STORAGE_ACCOUNT=$(az functionapp config appsettings list \
+            --name "$FUNC_NAME" --resource-group "$RG" \
+            --query "[?name=='AzureWebJobsStorage__accountName'].value" -o tsv)
+
+          # Upload zip to the deployments container using Entra ID auth
+          az storage blob upload \
+            --account-name "$STORAGE_ACCOUNT" \
+            --container-name deployments \
+            --name "deployment.zip" \
+            --file apiA.zip \
+            --overwrite \
+            --auth-mode login
+
+          # Restart the function app to pick up the new package
+          az functionapp restart --name "$FUNC_NAME" --resource-group "$RG"
 
   # ------------------------------------------------------------------
   # Deploy API B
@@ -131,10 +145,24 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Azure Functions
+      - name: Deploy to blob storage (Flex Consumption)
         run: |
-          az functionapp deploy \
-            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --name "${{ needs.resolve-names.outputs.funcAppBName }}" \
-            --src-path apiB.zip \
-            --type zip
+          FUNC_NAME="${{ needs.resolve-names.outputs.funcAppBName }}"
+          RG="${{ env.AZURE_RESOURCE_GROUP }}"
+
+          # Resolve the deployment storage account from app settings
+          STORAGE_ACCOUNT=$(az functionapp config appsettings list \
+            --name "$FUNC_NAME" --resource-group "$RG" \
+            --query "[?name=='AzureWebJobsStorage__accountName'].value" -o tsv)
+
+          # Upload zip to the deployments container using Entra ID auth
+          az storage blob upload \
+            --account-name "$STORAGE_ACCOUNT" \
+            --container-name deployments \
+            --name "deployment.zip" \
+            --file apiB.zip \
+            --overwrite \
+            --auth-mode login
+
+          # Restart the function app to pick up the new package
+          az functionapp restart --name "$FUNC_NAME" --resource-group "$RG"

@@ -45,13 +45,19 @@ jobs:
             --name "${{ env.AZURE_RESOURCE_GROUP }}" \
             --location "${{ env.AZURE_LOCATION }}"
 
+      - name: Resolve deployer SP object ID
+        id: sp
+        run: |
+          OID=$(az ad sp show --id "${{ secrets.AZURE_CLIENT_ID }}" --query id -o tsv)
+          echo "objectId=$OID" >> "$GITHUB_OUTPUT"
+
       - name: Deploy Bicep template
         uses: azure/arm-deploy@v2
         id: deploy
         with:
           resourceGroupName: ${{ env.AZURE_RESOURCE_GROUP }}
           template: ./infra/main.bicep
-          parameters: location=${{ env.AZURE_LOCATION }}
+          parameters: location=${{ env.AZURE_LOCATION }} deployerPrincipalId=${{ steps.sp.outputs.objectId }}
           deploymentName: main
           failOnStdErr: false
 

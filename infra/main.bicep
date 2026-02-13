@@ -17,6 +17,9 @@ param funcAPrivateEndpointIp string = '10.0.3.10'
 @description('Static private IP for Function B private endpoint (must be in snet-pe 10.0.3.0/24)')
 param funcBPrivateEndpointIp string = '10.0.3.20'
 
+@description('Object (principal) ID of the deploying service principal – granted Storage Blob Data Contributor on deployment storage accounts')
+param deployerPrincipalId string = ''
+
 // ---------------------------------------------------------------------------
 // Variables
 // ---------------------------------------------------------------------------
@@ -73,6 +76,7 @@ module funcAppA 'modules/function-app.bicep' = {
     privateEndpointIp: funcAPrivateEndpointIp
     privateDnsZoneId: networking.outputs.privateDnsZoneId
     appInsightsConnectionString: appInsights.properties.ConnectionString
+    deployerPrincipalId: deployerPrincipalId
   }
 }
 
@@ -90,6 +94,7 @@ module funcAppB 'modules/function-app.bicep' = {
     privateEndpointIp: funcBPrivateEndpointIp
     privateDnsZoneId: networking.outputs.privateDnsZoneId
     appInsightsConnectionString: appInsights.properties.ConnectionString
+    deployerPrincipalId: deployerPrincipalId
   }
 }
 
