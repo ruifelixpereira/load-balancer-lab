@@ -1,0 +1,65 @@
+name: Deploy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      resourceGroup:
+        description: 'Azure Resource Group name'
+        required: true
+        default: 'rg-lb-lab'
+      location:
+        description: 'Azure region'
+        required: true
+        default: 'eastus2'
+  push:
+    branches: [main]
+    paths: ['infra/**']
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_RESOURCE_GROUP: ${{ github.event.inputs.resourceGroup || 'rg-lb-lab' }}
+  AZURE_LOCATION: ${{ github.event.inputs.location || 'eastus2' }}
+
+jobs:
+  deploy-infra:
+    name: Deploy Bicep
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create Resource Group
+        run: |
+          az group create \
+            --name "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --location "${{ env.AZURE_LOCATION }}"
+
+      - name: Deploy Bicep template
+        uses: azure/arm-deploy@v2
+        id: deploy
+        with:
+          resourceGroupName: ${{ env.AZURE_RESOURCE_GROUP }}
+          template: ./infra/main.bicep
+          parameters: location=${{ env.AZURE_LOCATION }}
+          deploymentName: main
+          failOnStdErr: false
+
+      - name: Show deployment outputs
+        run: |
+          echo "### Deployment Outputs" >> $GITHUB_STEP_SUMMARY
+          echo "| Output | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Function App A | ${{ steps.deploy.outputs.functionAppAName }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Function App B | ${{ steps.deploy.outputs.functionAppBName }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Public IP      | ${{ steps.deploy.outputs.publicIpAddress }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Load Balancer  | ${{ steps.deploy.outputs.loadBalancerName }} |" >> $GITHUB_STEP_SUMMARY
