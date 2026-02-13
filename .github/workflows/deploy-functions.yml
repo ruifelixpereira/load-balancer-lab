@@ -108,8 +108,8 @@ jobs:
             --overwrite \
             --auth-mode login
 
-          # Restart the function app to pick up the new package
-          az functionapp restart --name "$FUNC_NAME" --resource-group "$RG"
+          # Sync triggers so the platform picks up the new deployment package
+          az functionapp trigger sync --name "$FUNC_NAME" --resource-group "$RG"
 
   # ------------------------------------------------------------------
   # Deploy API B
@@ -164,5 +164,5 @@ jobs:
             --overwrite \
             --auth-mode login
 
-          # Restart the function app to pick up the new package
-          az functionapp restart --name "$FUNC_NAME" --resource-group "$RG"
+          # Sync triggers so the platform picks up the new deployment package
+          az functionapp trigger sync --name "$FUNC_NAME" --resource-group "$RG"

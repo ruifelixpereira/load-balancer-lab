@@ -138,6 +138,40 @@ resource storageBlobDataOwnerRole 'Microsoft.Authorization/roleAssignments@2022-
 }
 
 // ---------------------------------------------------------------------------
+// RBAC – Storage Queue Data Contributor for the managed identity
+// (required by the Functions runtime for internal queue management)
+// ---------------------------------------------------------------------------
+resource storageQueueDataContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, functionApp.id, '974c5e8b-45b9-4653-ba55-5f855dd0fb88')
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '974c5e8b-45b9-4653-ba55-5f855dd0fb88' // Storage Queue Data Contributor
+    )
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RBAC – Storage Table Data Contributor for the managed identity
+// (required by the Functions runtime for internal timer/lease management)
+// ---------------------------------------------------------------------------
+resource storageTableDataContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, functionApp.id, '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3')
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3' // Storage Table Data Contributor
+    )
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// ---------------------------------------------------------------------------
 // RBAC – Storage Blob Data Contributor for the deployer SP (CI/CD)
 // ---------------------------------------------------------------------------
 resource deployerBlobContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(deployerPrincipalId)) {
