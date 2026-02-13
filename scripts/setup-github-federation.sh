@@ -99,11 +99,11 @@ add_credential \
   "repo:${GITHUB_REPO}:pull_request" \
   "GitHub Actions – pull requests"
 
-# c) environment (useful for workflow_dispatch with environments)
+# c) environment (used by all workflow jobs)
 add_credential \
-  "github-env-production" \
-  "repo:${GITHUB_REPO}:environment:production" \
-  "GitHub Actions – production environment"
+  "github-env-dev" \
+  "repo:${GITHUB_REPO}:environment:dev" \
+  "GitHub Actions – dev environment"
 
 # ---------------------------------------------------------------------------
 # 3. Summary
@@ -117,7 +117,7 @@ echo " Credentials added for repo: $GITHUB_REPO"
 echo ""
 echo "   1. github-main            – push to main"
 echo "   2. github-pr              – pull requests"
-echo "   3. github-env-production  – production environment"
+echo "   3. github-env-dev         – dev environment"
 echo ""
 echo " Your GitHub Actions workflows can now authenticate"
 echo " using azure/login@v2 with OIDC (no client secret needed)."

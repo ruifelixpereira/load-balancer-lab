@@ -10,7 +10,7 @@ on:
       location:
         description: 'Azure region'
         required: true
-        default: 'eastus2'
+        default: 'swedencentral'
   push:
     branches: [main]
     paths: ['infra/**']
@@ -21,12 +21,13 @@ permissions:
 
 env:
   AZURE_RESOURCE_GROUP: ${{ github.event.inputs.resourceGroup || 'rg-lb-lab' }}
-  AZURE_LOCATION: ${{ github.event.inputs.location || 'eastus2' }}
+  AZURE_LOCATION: ${{ github.event.inputs.location || 'swedencentral' }}
 
 jobs:
   deploy-infra:
     name: Deploy Bicep
     runs-on: ubuntu-latest
+    environment: dev
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
